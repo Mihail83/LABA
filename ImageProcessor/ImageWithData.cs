@@ -1,10 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Drawing;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ImageProcessor
 {
@@ -21,27 +16,19 @@ namespace ImageProcessor
 
         public void AddDateToImage()
         {
-            string newFolder =  (Directory.CreateDirectory(_imageInfo[0].DirectoryName + "AddDateToImage")).FullName;
+            string newFolder =  (Directory.CreateDirectory(_imageInfo[0].DirectoryName + "AddDateToImage")).FullName;            
             for (int i = 0; i < _imageInfo.Length; i++)
             {
                 using (Bitmap bitmapToAddDate = new Bitmap(_imageInfo[i].FullName))
                 {
                     Graphics graphicsToAddDate = Graphics.FromImage(bitmapToAddDate);
-                    var dateToDraw = ImageInfo.MetaInfoDateTaken(_imageInfo[i]);
+                    var dateToDraw = ImageInfo.MetaInfoDate(_imageInfo[i]).ConvertDateTimeToString();
+
                     var sizeOfDate = graphicsToAddDate.MeasureString(dateToDraw, font);
                     graphicsToAddDate.DrawString(dateToDraw, font, brush, graphicsToAddDate.VisibleClipBounds.Width - sizeOfDate.Width, 0);
                     bitmapToAddDate.Save(Path.Combine(newFolder, _imageInfo[i].Name));
-
                 }
-                
-                
-
-
             }
-           
-            
-
         }
-
     }
 }

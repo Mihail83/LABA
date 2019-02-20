@@ -32,5 +32,10 @@ namespace ImageProcessor
                 }
             }
         }
+
+        public static string ConvertDateTimeToString(this DateTime date)
+        {
+            return (date.ToShortDateString() + " " + date.ToLongTimeString()).Replace('.', '-').Replace(':', '-');
+        }
     }
 }

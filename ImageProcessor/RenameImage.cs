@@ -1,11 +1,4 @@
-﻿using System;
-using System.Drawing;
-using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using System.IO;
 
 namespace ImageProcessor
 {
@@ -15,27 +8,20 @@ namespace ImageProcessor
         public RenameAndReplaceImage(FileInfo[] imageinfo)
         {
             _imageInfo = imageinfo;
-        }
-       // Image
-       // PropertyItem
+        }       
 
-        public void ChangeNameByYear()
+        public void ChangeNameByDate()
         {
             var parentDirectoreName = _imageInfo[0].Directory.FullName;
             
-            Directory.CreateDirectory(parentDirectoreName + "ChangeNameByYear");
+            Directory.CreateDirectory(parentDirectoreName + "ChangeNameByDate");
 
             for (int i = 0; i < _imageInfo.Length; i++)
-            {
-                var newImageName = ImageInfo.MetaInfoDateTaken(_imageInfo[i]);
-                _imageInfo[i].CopyWithoutRewrite(parentDirectoreName + "ChangeNameByYear\\ " + newImageName + _imageInfo[i].Extension);   //  _imageInfo[i].CreationTime.ToShortDateString;
-
+            {                
+                string newImageName = ImageInfo.MetaInfoDate(_imageInfo[i]).ConvertDateTimeToString();
+                _imageInfo[i].CopyWithoutRewrite(parentDirectoreName + "ChangeNameByDate\\ " + newImageName + _imageInfo[i].Extension);   
 
             }
         }
-
-        
-        
-
     }
 }

@@ -2,11 +2,10 @@
 using System.Drawing.Imaging;
 using System.Drawing;
 using static System.Threading.Thread;
-
-using System.Collections.Generic;
+using MetadataExtractor;
+using MetadataExtractor.Formats.Exif;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace ImageProcessor
@@ -15,6 +14,7 @@ namespace ImageProcessor
     {
         public FileInfo[] ImageFilesInfo=null;
 
+        public bool pathExist;
         public string GetWorkDirectory
         {
             get
@@ -36,12 +36,10 @@ namespace ImageProcessor
             DirectoryInfo imageDirInfo;
 
             Console.WriteLine("ВВедите путь к обрабатываемой папке");
-            var path = Console.ReadLine();
-            //валидация??
+            var path = Console.ReadLine();           
             try
             {
-                imageDirInfo = new DirectoryInfo(path);
-
+                imageDirInfo = new DirectoryInfo(path= "H:\\labaImage");
             }
             catch (Exception)
             {
@@ -52,7 +50,11 @@ namespace ImageProcessor
 
             if (imageDirInfo.Exists)
             {
-                ImageFilesInfoTEMP = imageDirInfo.GetFiles("*.jpg");   //больше форматов
+                
+               // ImageFilesInfoTEMP = imageDirInfo.GetFiles("*.jpg");   //больше форматов
+                
+                var ext = new string[] { ".jpeg", ".jpg", ".png", "tiff"};
+                ImageFilesInfoTEMP = (from fi in new DirectoryInfo(path).GetFiles() where ext.Contains(fi.Extension.ToLower()) select fi).ToArray();
             }
             else
             {
@@ -61,17 +63,19 @@ namespace ImageProcessor
                 return;
             }
 
-            if (ImageFilesInfoTEMP.Length==0)
+            if (ImageFilesInfoTEMP.Length == 0)
             {
                 Console.WriteLine("Фотографии не найдены");
                 Sleep(1500);
             }
             else
+            { 
                 ImageFilesInfo = ImageFilesInfoTEMP;
+                pathExist = true;
+            }
+        }     
 
-        }
-
-        public static string MetaInfoDateTaken(FileInfo imagefileinfo)   // out  image???
+        public static DateTime MetaInfoDate(FileInfo imagefileinfo)   // out  image???
         {
             Image image = new Bitmap(imagefileinfo.FullName);
             PropertyItem imageProperty = null;
@@ -79,41 +83,55 @@ namespace ImageProcessor
             {
                 imageProperty = image.GetPropertyItem(0x132);
             }
-            catch 
-            {              
+            catch
+            {
             }
             if (imageProperty != null)
             {
-                string dateTaken = Encoding.UTF8.GetString(imageProperty.Value).Trim().Substring(0, 19).Replace(':', '-').Replace(' ', '-');
-                return dateTaken;
+                try
+                {
+                    string dateTaken = Encoding.UTF8.GetString(imageProperty.Value).Trim().Substring(0, 19);
+                    var firstHalf = dateTaken.Substring(0, dateTaken.IndexOf(' ')).Replace(':', '.');
+                    var secondHalf = dateTaken.Substring(dateTaken.IndexOf(' ') + 1, 8);
+                    var Date = DateTime.Parse(firstHalf + " " + secondHalf);
+                    return Date;
+                }
+                catch (Exception)
+                {
+                    return imagefileinfo.LastWriteTime;
+                }
+               
             }
             else
-                return imagefileinfo.LastWriteTime.ToShortDateString() +"-" + imagefileinfo.LastWriteTime.ToLongTimeString().Replace(':','-');
+                return imagefileinfo.LastWriteTime;
         }
 
+        public double[] GPSExtractor(FileInfo imagefileinfo)  //вариант получения метаданных с помощью стороннего пакета
+        {
 
+            var metainfo = ImageMetadataReader.ReadMetadata(imagefileinfo.FullName);
+            //foreach (var item in metainfo)
+            //{
+            //    foreach (var tag in item.Tags)
+            //    {
+            //        Console.WriteLine($"{item.Name}    -  {tag.Name}   -  {tag.Description}");
+            //    }
+            //}
+            //var subIfdDirectory = metainfo?.OfType<ExifSubIfdDirectory>().FirstOrDefault();
+            //var datetime = subIfdDirectory.GetDescription(ExifDirectoryBase.TagDateTimeOriginal);
 
-        //public static string MetaInfoDateTaken2(FileInfo imagefileinfo)
-        //{
-        //    using (FileStream fs = new FileStream(imagefileinfo.FullName, FileMode.Open, FileAccess.Read))
-        //    using (Image myImage = Image.FromStream(fs, false, false))
-        //    {
-        //        PropertyItem propItem = null;
-        //        try
-        //        {
-        //            propItem = myImage.GetPropertyItem(0x132);
-        //        }
-        //        catch { }
-        //        if (propItem != null)
-        //        {
-        //            string dateTaken = r.Replace(Encoding.UTF8.GetString(propItem.Value), "-", 2);
-        //            return dateTaken;
-        //        }
-        //        else
-        //            return imagefileinfo.LastWriteTime.ToLongDateString();
-        //    }
-        //}
-
-
+            var gpsDirectory = metainfo.OfType<GpsDirectory>().FirstOrDefault();
+            try
+            {
+                var gpsLocation = gpsDirectory.GetGeoLocation();
+                double[] arr = { gpsLocation.Latitude, gpsLocation.Longitude };
+               Console.WriteLine($"\n\n {imagefileinfo.FullName}   \n{gpsLocation.Latitude}\n {gpsLocation.Longitude}");
+                return arr;
+            }
+            catch (NullReferenceException)
+            {
+                return null;
+            }
+        }        
     }
 }
